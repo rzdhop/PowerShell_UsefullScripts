@@ -9,7 +9,7 @@ param(
 if ($verbose -or $v) {
     $v = $true
 }
-if ($IP -eq "") {Write-Host "Use the script like that : `n ./script.ps1 <IP(string) | local> <-v | -verbose> "; Exit}
+if ($IP -eq "" -and $local -eq $false) {Write-Host "Use the script like that : `n ./script.ps1 <IP(string) | local> <-v | -verbose> "; Exit}
 Write-Host `n
 Set-ExecutionPolicy Unrestricted -Scope Process
 
@@ -52,15 +52,16 @@ if ($local){
     $IPAddress = $ActualIPv4
  }else {$IPAddress = $IP}
 [string]$DfltGateway = Get-NetIPConfiguration | Where-Object {$_.InterfaceIndex -eq $InterfaceIndex} | Select-Object -ExpandProperty IPv4DefaultGateway | Select-Object -ExpandProperty Nexthop
+$prfxLen = Get-NetIPAddress | Where-Object {$_.InterfaceIndex -eq $InterfaceIndex -and $_.AddressFamily -eq 'IPv4'} | Select-Object -ExpandProperty PrefixLength
+
 if ($v){Write-Host "Setting network adapter info's...`n" @normCol}
 $IPAdap_Info = @{
     InterfaceIndex = $InterfaceIndex
     IPAddress = $IPAddress
-    PrefixLength = 24
+    PrefixLength = $prfxLen
     DefaultGateway = $DfltGateway
 }
 if ($v){Write-Host "Setting network adapter to desired static IP: $IPAddress" @normCol}
 New-NetIPAddress @IPAdap_Info
 
 Write-Host `n "Porcess Exited succesfully! "`n  @normCol
-
